@@ -69,6 +69,7 @@ def consume(request):
     except Exception:
         logger.exception('Fault in decoding {!s}'.format(request.body))
     else:
+        logger.info('Got body: {}'.format(request.body))
         for item in e:
             if item.tag == 'InstantaneousDemand':
                 item = {

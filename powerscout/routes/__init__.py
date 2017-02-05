@@ -85,4 +85,5 @@ def consume(request):
                     int(item['Demand'], 16) * \
                     int(item['Multiplier'], 16) / int(item['Divisor'], 16)
                 post_metric('power.instant_demand', instant_demand)
+                post_metric('power.instant_demand.watts', instant_demand * 1000.)
     return request.Response(text='')

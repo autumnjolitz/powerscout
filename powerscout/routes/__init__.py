@@ -5,9 +5,12 @@ import io
 import time
 import struct
 import pickle
+import redis
 import socket
 
 REGISTRY = {}
+
+db = redis.Redis()
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +72,10 @@ def consume(request):
     except Exception:
         logger.exception('Fault in decoding {!s}'.format(request.body))
     else:
-        logger.info('Got body: {}'.format(request.body))
         for item in e:
+            db.hmset('eagle_data|{}'.format(item.tag), {
+                    x.tag: x.text for x in item
+                })
             if item.tag == 'InstantaneousDemand':
                 item = {
                     x.tag: x.text for x in item

@@ -129,7 +129,7 @@ def consume(request):
         timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
 
         name = item['MeterMacId']
-        key = f'meter-{meter_mac}'
+        key = f'meter-{name}'
         with db.pipeline() as p:
             p.hset(key, 'instand_demand', instant_demand)
             p.hset(key, 'instant_demand_timestamp', timestamp_s)
@@ -157,7 +157,7 @@ def consume(request):
             (int(item['Multiplier'], 16) or 1) / (int(item['Divisor']) or 1, 16)
 
         name = item['MeterMacId']
-        key = f'meter-{meter_mac}'
+        key = f'meter-{name}'
         with db.pipeline() as p:
             p.hset(key, 'sum_delivered', utility_kwh_delivered)
             p.hset(key, 'sum_received', utility_kwh_sent)
@@ -175,7 +175,7 @@ def consume(request):
     if 'FastPollStatus' in body:
         item = body['FastPollStatus']
         name = item['MeterMacId']
-        key = f'meter-{meter_mac}'
+        key = f'meter-{name}'
 
         period_to_poll = int(body['Frequency'], 16)
         end = int(body['EndTime'], 16) + YEAR_2000_OFFSET

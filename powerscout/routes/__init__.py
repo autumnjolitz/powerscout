@@ -148,7 +148,7 @@ def consume(request):
             p.hset('eagles', name, eagle_id)
             p.execute()
 
-        post_metric(f'meters.{name}.instant_demand', instant_demand, timestamp_s)
+        post_metric(f'meters.{name}.instant_demand.kilowatts', instant_demand, timestamp_s)
         post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., timestamp_s)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.eagle.device',
                     eagle_timestamp - timestamp_s)

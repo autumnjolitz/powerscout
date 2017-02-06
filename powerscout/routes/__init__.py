@@ -195,6 +195,7 @@ def consume(request):
             p.execute()
         post_metric(f'meters.{name}.fast_poll.tx_info.ping'.format(item['MeterMacId']), 1)
     commands = db.lrange(f'{eagle_id}-commands')
+    num = len(commands)
     if not commands:
         return request.Response(text='')
     queue = []
@@ -217,10 +218,10 @@ def consume(request):
 </RavenCommand>''')
     if not queue:
         return request.Response(text='')
+    with db.pipeline() as p:
+        for _ in range(num):
+            p.lpop()
+        p.execute()
     if queue[1:]:
-        with db.pipeline() as p:
-            for _ in range(len(commands)):
-                p.lpop()
-            p.execute()
         db.lpush(f'{eagle_id}-commands', *queue[1:])
     return request.Response(text=queue[0])

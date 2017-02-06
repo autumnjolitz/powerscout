@@ -194,7 +194,7 @@ def consume(request):
             p.hset(key, 'fast_poll_timestamp', now)
             p.execute()
         post_metric(f'meters.{name}.fast_poll.tx_info.ping'.format(item['MeterMacId']), 1)
-    commands = db.lrange(f'{eagle_id}-commands', 0, 10)
+    commands = db.lrange(f'{eagle_id}-commands')
     if not commands:
         return request.Response(text='')
     queue = []
@@ -218,5 +218,9 @@ def consume(request):
     if not queue:
         return request.Response(text='')
     if queue[1:]:
+        with db.pipeline() as p:
+            for _ in range(len(commands)):
+                p.lpop()
+            p.execute()
         db.lpush(f'{eagle_id}-commands', *queue[1:])
     return request.Response(text=queue[0])

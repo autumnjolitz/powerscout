@@ -78,7 +78,7 @@ def index(request):
         for meter in meters:
             p.hgetall(meter)
         meters = {
-            meter.split('-', 1)[1]: data for meter, data in zip(meters, p.execute())
+            meter.split(b'-', 1)[1].decode('ascii'): data for meter, data in zip(meters, p.execute())
         }
     return request.Response(
         mime_type='text/html',

@@ -125,7 +125,7 @@ def consume(request):
         item = body['InstantaneousDemand']
         instant_demand = \
             int(item['Demand'], 16) * \
-            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor']) or 1, 16)
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1, 16)
         timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
 
         name = item['MeterMacId']

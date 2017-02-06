@@ -86,7 +86,7 @@ def index(request):
 
 @route('/fastpoll/{mac_id}')
 @route('/fastpoll/{mac_id}/{seconds}')
-def fastpoll(mac_id, seconds=4):
+def fastpoll(request, mac_id, seconds=4):
     assert seconds > 0, 'wtf'
     assert seconds <= 255, 'wtf'
     if not db.sismember('meters', mac_id):

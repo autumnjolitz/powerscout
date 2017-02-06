@@ -160,10 +160,10 @@ def consume(request):
         timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
         utility_kwh_delivered = \
             int(item['SummationDelivered'], 16) * \
-            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor']) or 1, 16)
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1)
         utility_kwh_sent = \
             int(item['SummationReceived'], 16) * \
-            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor']) or 1, 16)
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1)
 
         name = item['MeterMacId']
         key = f'meter-{name}'

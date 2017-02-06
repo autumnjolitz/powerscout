@@ -80,6 +80,8 @@ def index(request):
         meters = {
             meter.split(b'-', 1)[1].decode('ascii'): data for meter, data in zip(meters, p.execute())
         }
+    import pprint
+    logger.info(pprint.pformat(meters))
     return request.Response(
         mime_type='text/html',
         text=render_template('index.html', meters=meters))
@@ -104,7 +106,6 @@ def fastpoll(request, mac_id, seconds=4):
 
 @route('/ingest')
 def consume(request):
-    logger.info('Raw Request: {}'.format(request.body))
     body = io.BytesIO(request.body)
     body.seek(0)
     try:

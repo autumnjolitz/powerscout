@@ -12,7 +12,8 @@
 
 {% for meter in meters %}
     <h2>{{meter}}</h2>
-    {% for section in sorted(meters[meter]) %}
+    {% set data = meters[meter] %}
+    {% for section in sorted(data) %}
         <h4>{{section}}</h4>
         {% for key, value in meters[meter][section].items() %}
             <p>{{key}}: {{value}}</p>

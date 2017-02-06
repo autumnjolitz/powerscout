@@ -30,7 +30,7 @@ def route(path):
                 logger.exception('Unhandled exception for {}'.format(func.__name__))
                 return request.Response(code=500, text='Bad error')
         assert path not in REGISTRY, 'Cannot register {} path'.format(path)
-        REGISTRY[path] = func
+        REGISTRY[path] = wrapped
         return wrapped
     return wrapper
 '''
@@ -89,8 +89,6 @@ def index(request):
                 for key, value in (handle(key, value) for key, value in data.items())
             } for meter, data in zip(meters, p.execute())
         }
-    import pprint
-    logger.info(pprint.pformat(meters))
     return request.Response(
         mime_type='text/html',
         text=render_template('index.html', meters=meters))
@@ -98,6 +96,7 @@ def index(request):
 @route('/fastpoll/{mac_id}')
 @route('/fastpoll/{mac_id}/{seconds}')
 def fastpoll(request, mac_id, seconds=4):
+    seconds = int(seconds)
     assert seconds > 0, 'wtf'
     assert seconds <= 255, 'wtf'
     if not db.sismember('meters', mac_id):

@@ -201,7 +201,7 @@ def consume(request):
     queue = []
     commands = {
         command: args
-        for command, args in (x.split('|') for x in commands)
+        for command, args in (x.decode('ascii').split('|', 1) for x in commands)
     }
     for command, value in commands.items():
         if command == 'fastpoll':
@@ -224,4 +224,5 @@ def consume(request):
         p.execute()
     if queue[1:]:
         db.lpush(f'{eagle_id}-commands', *queue[1:])
+    logger.info('Sending back {}'.format(queue[0]))
     return request.Response(text=queue[0])

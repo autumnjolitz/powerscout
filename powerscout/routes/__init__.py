@@ -124,7 +124,7 @@ def consume(request):
         item = body['InstantaneousDemand']
         instant_demand = \
             int(item['Demand'], 16) * \
-            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'] or 1), 16)
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor']) or 1, 16)
         timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
 
         name = item['MeterMacId']
@@ -149,10 +149,10 @@ def consume(request):
         timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
         utility_kwh_delivered = \
             int(item['SummationDelivered'], 16) * \
-            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'] or 1), 16)
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor']) or 1, 16)
         utility_kwh_sent = \
             int(item['SummationReceived'], 16) * \
-            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'] or 1), 16)
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor']) or 1, 16)
 
         name = item['MeterMacId']
         key = f'meter-{meter_mac}'

@@ -194,7 +194,7 @@ def consume(request):
             p.hset(key, 'fast_poll_timestamp', now)
             p.execute()
         post_metric(f'meters.{name}.fast_poll.tx_info.ping'.format(item['MeterMacId']), 1)
-    commands = db.lrange(f'{eagle_id}-commands')
+    commands = db.lrange(f'{eagle_id}-commands', 0, -1)
     num = len(commands)
     if not commands:
         return request.Response(text='')

@@ -134,6 +134,7 @@ def consume(request):
             p.hset(key, 'instand_demand', instant_demand)
             p.hset(key, 'instant_demand_timestamp', timestamp_s)
             p.sadd('meters', key)
+            p.execute()
 
         post_metric(f'meters.{name}.instant_demand', instant_demand, timestamp_s)
         post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., timestamp_s)
@@ -161,6 +162,7 @@ def consume(request):
             p.hset(key, 'sum_delivered', utility_kwh_delivered)
             p.hset(key, 'sum_received', utility_kwh_sent)
             p.sadd('meters', key)
+            p.execute()
 
         post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered)
         post_metric(f'meters.{name}.current_sum.received', utility_kwh_sent)
@@ -181,6 +183,7 @@ def consume(request):
             p.hset(key, 'fast_poll_period_s', period_to_poll)
             p.hset(key, 'fast_poll_end_utc_timestamp', end)
             p.hset(key, 'fast_poll_timestamp', now)
+            p.execute()
         post_metric(f'meters.{name}.fast_poll.tx_info.ping'.format(item['MeterMacId']), 1)
     commands = db.lrange(f'{eagle_id}-commands', 0, 10)
     if not commands:

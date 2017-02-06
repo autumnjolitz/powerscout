@@ -139,36 +139,38 @@ def consume(request):
         logger.exception('Fault in decoding {!s}'.format(request.body))
         return request.Response(code=400)
 
-    now = time.time()
+    utc_now = datetime.datetime.utcnow().timestamp()
+
     if 'InstantaneousDemand' in body:
         item = body['InstantaneousDemand']
         instant_demand = \
             int(item['Demand'], 16) * \
             (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1)
-        timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
+        timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
 
         name = item['MeterMacId']
         key = f'meter-{name}'
         with db.pipeline() as p:
             p.hset(key, 'instand_demand', instant_demand)
-            p.hset(key, 'instant_demand_timestamp', timestamp_s)
+            p.hset(key, 'instant_demand_timestamp', timestamp_utc)
             p.sadd('meters', key)
             p.hset('eagles', name, eagle_id)
             p.execute()
 
-        post_metric(f'meters.{name}.instant_demand.kilowatts', instant_demand, timestamp_s)
-        post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., timestamp_s)
+        post_metric(f'meters.{name}.instant_demand.kilowatts', instant_demand, timestamp_utc)
+        post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.eagle.device',
-                    eagle_timestamp - timestamp_s)
+                    eagle_timestamp - timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.eagle',
-                    now - eagle_timestamp)
-        post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.device', now - timestamp_s)
+                    utc_now - eagle_timestamp)
+        post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.device', utc_now - timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.ping', 1)
-        del timestamp_s
+        del timestamp_utc
 
     if 'CurrentSummationDelivered' in body:
         item = body['CurrentSummationDelivered']
-        timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
+        timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
+
         utility_kwh_delivered = \
             int(item['SummationDelivered'], 16) * \
             (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1)
@@ -188,9 +190,9 @@ def consume(request):
         post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered)
         post_metric(f'meters.{name}.current_sum.received', utility_kwh_sent)
         post_metric(f'meters.{name}.current_sum.tx_info.delay.eagle.device',
-                    eagle_timestamp - timestamp_s)
-        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.eagle', now - eagle_timestamp)
-        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.device', now - timestamp_s)
+                    eagle_timestamp - timestamp_utc)
+        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.eagle', utc_now - eagle_timestamp)
+        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.device', utc_now - timestamp_utc)
         post_metric(f'meters.{name}.current_sum.tx_info.ping', 1)
 
     if 'FastPollStatus' in body:
@@ -203,7 +205,7 @@ def consume(request):
         with db.pipeline() as p:
             p.hset(key, 'fast_poll_period_s', period_to_poll)
             p.hset(key, 'fast_poll_end_utc_timestamp', end)
-            p.hset(key, 'fast_poll_timestamp', now)
+            p.hset(key, 'fast_poll_timestamp_utc', utc_now)
             p.hset('eagles', name, eagle_id)
             p.execute()
         post_metric(f'meters.{name}.fast_poll.tx_info.ping'.format(item['MeterMacId']), 1)

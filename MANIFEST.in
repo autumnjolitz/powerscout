@@ -14,5 +14,5 @@
 # recusive-include module_template/templates *.html
 
 include LICENSE
-
+recursive-include powerscout/templates *.html
 

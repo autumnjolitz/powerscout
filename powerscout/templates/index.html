@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>PowerScout ingestor</title>
+</head>
+<body>
+<h1>Powerscout</h1>
+
+<p>There are {{ len(meters) }} configured meters</p>
+
+{% for meter in meters %}
+    <h2>{{meter}}</h2>
+    {% for section in sorted(meters[meter]) %}
+        <h4>{{section}}</h4>
+        {% for key, value in meters[meter][section].items() %}
+            <p>{{key}}: {{value}}</p>
+        {% endfor %}
+    {% endfor %}
+    <br>
+{% endfor %}
+
+</body>
+</html>

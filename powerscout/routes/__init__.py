@@ -4,12 +4,16 @@ import xml.etree.ElementTree
 import io
 import time
 import struct
+import datetime
 import pickle
 import redis
 import socket
+from ..templates import render_template
+
 
 REGISTRY = {}
-
+YEAR_2000_OFFSET = \
+    (datetime.datetime(2000, 1, 1) - datetime.datetime.fromtimestamp(0)).total_seconds()
 db = redis.Redis()
 
 logger = logging.getLogger(__name__)
@@ -63,27 +67,139 @@ def post_metric(path, value, timestamp=None):
         t_s = time.time()
 
 
+@route('/')
+def index(request):
+    meters = db.smembers('meters')
+    with db.pipeline() as p:
+        for meter in meters:
+            p.hgetall(meter)
+        meters = {
+            meter.split('-', 1)[1]: data for meter, data in zip(meters, p.execute())
+        }
+    return request.Response(
+        mime_type='text/html',
+        text=render_template('index.html', meters=meters))
+
+@route('/fastpoll/{mac_id}')
+@route('/fastpoll/{mac_id}/{seconds}')
+def fastpoll(mac_id, seconds=4):
+    assert seconds > 0, 'wtf'
+    assert seconds <= 255, 'wtf'
+    if not db.sismember('meters', mac_id):
+        return request.Response(code=400, json={
+            'code': -1,
+            'message': f'{mac_id} is not recognized'
+            })
+    db.rpush(f'{mac_id}-commands', f'fastpoll|{seconds}')
+    return request.Response(json={
+            'code': 0,
+            'message': 'Ok'
+        })
+
+
+
 @route('/ingest')
 def consume(request):
     body = io.BytesIO(request.body)
     body.seek(0)
     try:
-        e = xml.etree.ElementTree.parse(body).getroot()
+        root = xml.etree.ElementTree.parse(body).getroot()
+        eagle_id = root.attrib['macId']
+        eagle_timestamp = int(root.attrib['timestamp'][:-1], 10)
+        body = {
+            element.tag: {
+                leaf.tag: leaf.text for leaf in element
+            } for element in root
+        }
     except Exception:
         logger.exception('Fault in decoding {!s}'.format(request.body))
-    else:
-        for item in e:
-            db.hmset('eagle_data|{}'.format(item.tag), {
-                    x.tag: x.text for x in item
-                })
-            if item.tag == 'InstantaneousDemand':
-                item = {
-                    x.tag: x.text for x in item
-                }
-                # time_stamp = int(item['TimeStamp'], 16)
-                instant_demand = \
-                    int(item['Demand'], 16) * \
-                    int(item['Multiplier'], 16) / int(item['Divisor'], 16)
-                post_metric('power.instant_demand', instant_demand)
-                post_metric('power.instant_demand.watts', instant_demand * 1000.)
-    return request.Response(text='')
+        return request.Response(code=400)
+
+    now = time.time()
+    if 'InstantaneousDemand' in body:
+        item = body['InstantaneousDemand']
+        instant_demand = \
+            int(item['Demand'], 16) * \
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'] or 1), 16)
+        timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
+
+        name = item['MeterMacId']
+        key = f'meter-{meter_mac}'
+        with db.pipeline() as p:
+            p.hset(key, 'instand_demand', instant_demand)
+            p.hset(key, 'instant_demand_timestamp', timestamp_s)
+            p.sadd('meters', key)
+
+        post_metric(f'meters.{name}.instant_demand', instant_demand, timestamp_s)
+        post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., timestamp_s)
+        post_metric(f'meters.{name}.instant_demand.tx_info.delay.eagle.device',
+                    eagle_timestamp - timestamp_s)
+        post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.eagle',
+                    now - eagle_timestamp)
+        post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.device', now - timestamp_s)
+        post_metric(f'meters.{name}.instant_demand.tx_info.ping', 1)
+        del timestamp_s
+
+    if 'CurrentSummationDelivered' in body:
+        item = body['CurrentSummationDelivered']
+        timestamp_s = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
+        utility_kwh_delivered = \
+            int(item['SummationDelivered'], 16) * \
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'] or 1), 16)
+        utility_kwh_sent = \
+            int(item['SummationReceived'], 16) * \
+            (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'] or 1), 16)
+
+        name = item['MeterMacId']
+        key = f'meter-{meter_mac}'
+        with db.pipeline() as p:
+            p.hset(key, 'sum_delivered', utility_kwh_delivered)
+            p.hset(key, 'sum_received', utility_kwh_sent)
+            p.sadd('meters', key)
+
+        post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered)
+        post_metric(f'meters.{name}.current_sum.received', utility_kwh_sent)
+        post_metric(f'meters.{name}.current_sum.tx_info.delay.eagle.device',
+                    eagle_timestamp - timestamp_s)
+        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.eagle', now - eagle_timestamp)
+        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.device', now - timestamp_s)
+        post_metric(f'meters.{name}.current_sum.tx_info.ping', 1)
+
+    if 'FastPollStatus' in body:
+        item = body['FastPollStatus']
+        name = item['MeterMacId']
+        key = f'meter-{meter_mac}'
+
+        period_to_poll = int(body['Frequency'], 16)
+        end = int(body['EndTime'], 16) + YEAR_2000_OFFSET
+        with db.pipeline() as p:
+            p.hset(key, 'fast_poll_period_s', period_to_poll)
+            p.hset(key, 'fast_poll_end_utc_timestamp', end)
+            p.hset(key, 'fast_poll_timestamp', now)
+        post_metric(f'meters.{name}.fast_poll.tx_info.ping'.format(item['MeterMacId']), 1)
+    commands = db.lrange(f'{eagle_id}-commands', 0, 10)
+    if not commands:
+        return request.Response(text='')
+    queue = []
+    commands = {
+        command: args
+        for command, args in (x.split('|') for x in commands)
+    }
+    for command, value in commands.items():
+        if command == 'fastpoll':
+            period = hex(int(value)).upper()
+            duration = 15
+            if period == 0:
+                duration = 0
+            duration = hex(duration).upper()
+            queue.append(f'''<RavenCommand>
+<Name>set_fast_poll</Name>
+ <MacId>{eagle_id}</MacId>
+<Frequency>{period}</Frequency>
+<Duration>{duration}</Duration>
+</RavenCommand>''')
+    if not queue:
+        return request.Response(text='')
+    if queue[1:]:
+        db.lpush(f'{eagle_id}-commands', *queue[1:])
+    return request.Response(text=queue[0])

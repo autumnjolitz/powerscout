@@ -147,6 +147,8 @@ def consume(request):
             int(item['Demand'], 16) * \
             (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1)
         timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
+        local_timestamp = datetime.datetime.fromtimestamp(
+            timestamp_utc).replace(tzinfo=datetime.timezone.utc).astimezone().timestamp()
 
         name = item['MeterMacId']
         key = f'meter-{name}'
@@ -157,8 +159,8 @@ def consume(request):
             p.hset('eagles', name, eagle_id)
             p.execute()
 
-        post_metric(f'meters.{name}.instant_demand.kilowatts', instant_demand)
-        post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000.)
+        post_metric(f'meters.{name}.instant_demand.kilowatts', instant_demand, local_timestamp)
+        post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., local_timestamp)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.eagle.device',
                     eagle_timestamp - timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.eagle',
@@ -170,6 +172,8 @@ def consume(request):
     if 'CurrentSummationDelivered' in body:
         item = body['CurrentSummationDelivered']
         timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
+        local_timestamp = datetime.datetime.fromtimestamp(
+            timestamp_utc).replace(tzinfo=datetime.timezone.utc).astimezone().timestamp()
 
 
         utility_kwh_delivered = \
@@ -188,8 +192,8 @@ def consume(request):
             p.hset('eagles', name, eagle_id)
             p.execute()
 
-        post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered)
-        post_metric(f'meters.{name}.current_sum.received', utility_kwh_sent)
+        post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered, local_timestamp)
+        post_metric(f'meters.{name}.current_sum.received', utility_kwh_sent, local_timestamp)
         post_metric(f'meters.{name}.current_sum.tx_info.delay.eagle.device',
                     eagle_timestamp - timestamp_utc)
         post_metric(f'meters.{name}.current_sum.tx_info.delay.server.eagle', utc_now - eagle_timestamp)

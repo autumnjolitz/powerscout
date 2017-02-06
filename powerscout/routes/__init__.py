@@ -105,7 +105,8 @@ def fastpoll(request, mac_id, seconds=4):
             'code': -1,
             'message': f'{mac_id} is not recognized'
             })
-    db.rpush(f'{mac_id}-commands', f'fastpoll|{seconds}')
+    eagle_id = db.hget('eagles', mac_id)
+    db.rpush(f'{eagle_id}-commands', f'fastpoll|{seconds}')
     return request.Response(json={
             'code': 0,
             'message': 'Ok'
@@ -144,6 +145,7 @@ def consume(request):
             p.hset(key, 'instand_demand', instant_demand)
             p.hset(key, 'instant_demand_timestamp', timestamp_s)
             p.sadd('meters', key)
+            p.hset('eagles', name, eagle_id)
             p.execute()
 
         post_metric(f'meters.{name}.instant_demand', instant_demand, timestamp_s)
@@ -172,6 +174,7 @@ def consume(request):
             p.hset(key, 'sum_delivered', utility_kwh_delivered)
             p.hset(key, 'sum_received', utility_kwh_sent)
             p.sadd('meters', key)
+            p.hset('eagles', name, eagle_id)
             p.execute()
 
         post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered)
@@ -193,6 +196,7 @@ def consume(request):
             p.hset(key, 'fast_poll_period_s', period_to_poll)
             p.hset(key, 'fast_poll_end_utc_timestamp', end)
             p.hset(key, 'fast_poll_timestamp', now)
+            p.hset('eagles', name, eagle_id)
             p.execute()
         post_metric(f'meters.{name}.fast_poll.tx_info.ping'.format(item['MeterMacId']), 1)
     commands = db.lrange(f'{eagle_id}-commands', 0, -1)

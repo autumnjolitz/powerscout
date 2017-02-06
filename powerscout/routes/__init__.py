@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 def route(path):
     def wrapper(func):
         @functools.wraps(func)
-        def wrapped(request, *args, **kwargs):
+        def wrapped(request):
+            kwargs = request.match_dict
             try:
-                return func(request, *args, **kwargs)
+                return func(request, **kwargs)
             except Exception:
                 logger.exception('Unhandled exception for {}'.format(func.__name__))
                 return request.Response(code=500, text='Bad error')

@@ -7,7 +7,9 @@ from setuptools import (setup, find_packages)
 
 here = path.abspath(path.dirname(__file__))
 install_requirements = [
-    'japronto'
+    'japronto',
+    'jinja2',
+    'redis'
 ]
 
 # The following are meant to avoid accidental upload/registration of this

@@ -99,6 +99,8 @@ def fastpoll(request, mac_id, seconds=4):
     seconds = int(seconds)
     assert seconds > 0, 'wtf'
     assert seconds <= 255, 'wtf'
+    if mac_id.startswith('meter-'):
+        mac_id = mac_id[7:]
     if not db.sismember('meters', mac_id):
         return request.Response(code=400, json={
             'code': -1,

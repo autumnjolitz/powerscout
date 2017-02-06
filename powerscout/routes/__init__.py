@@ -70,6 +70,11 @@ def post_metric(path, value, timestamp=None):
             conn = socket.create_connection(('nyx.lan', 2004))
         t_s = time.time()
 
+def handle(key, value):
+    if key.endswith(b'timestamp'):
+        return float(value)
+    return value.encode('ascii')
+
 
 @route('/')
 def index(request):
@@ -78,7 +83,10 @@ def index(request):
         for meter in meters:
             p.hgetall(meter)
         meters = {
-            meter.split(b'-', 1)[1].decode('ascii'): data for meter, data in zip(meters, p.execute())
+            meter.split(b'-', 1)[1].decode('ascii'): {
+                key.decode('ascii'): value
+                for key, value in (handle(key, value) for key, value in data.items())
+            } for meter, data in zip(meters, p.execute())
         }
     import pprint
     logger.info(pprint.pformat(meters))

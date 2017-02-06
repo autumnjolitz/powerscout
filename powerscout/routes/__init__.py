@@ -105,7 +105,13 @@ def fastpoll(request, mac_id, seconds=4):
             'code': -1,
             'message': f'{mac_id} is not recognized'
             })
-    eagle_id = db.hget('eagles', mac_id)
+    try:
+        eagle_id = db.hget('eagles', mac_id).decode('ascii')
+    except AttributeError:
+        return request.Response(json={
+            'code': -2,
+            'message': 'Eagle mapping not ready. Cannot reverse.'
+            }, code=400)
     db.rpush(f'{eagle_id}-commands', f'fastpoll|{seconds}')
     return request.Response(json={
             'code': 0,

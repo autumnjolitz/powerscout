@@ -104,6 +104,7 @@ def fastpoll(request, mac_id, seconds=4):
 
 @route('/ingest')
 def consume(request):
+    logger.info('Raw Request: {}'.format(request.body))
     body = io.BytesIO(request.body)
     body.seek(0)
     try:

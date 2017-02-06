@@ -216,11 +216,11 @@ def consume(request):
     }
     for command, value in commands.items():
         if command == 'fastpoll':
-            period = '0x'.format(hex(int(value))[2:])
+            period = '0x{}'.format(hex(int(value))[2:])
             duration = 15
             if period == 0:
                 duration = 0
-            duration = '0x'.format(hex(duration)[2:])
+            duration = '0x{}'.format(hex(duration)[2:])
             queue.append(f'''<RavenCommand>
 <Name>set_fast_poll</Name>
  <MacId>{eagle_id}</MacId>

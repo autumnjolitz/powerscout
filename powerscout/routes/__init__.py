@@ -22,8 +22,12 @@ logger = logging.getLogger(__name__)
 def route(path):
     def wrapper(func):
         @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            return func(*args, **kwargs)
+        def wrapped(request, *args, **kwargs):
+            try:
+                return func(request, *args, **kwargs)
+            except Exception:
+                logger.exception('Unhandled exception for {}'.format(func.__name__))
+                return request.Response(code=500, text='Bad error')
         assert path not in REGISTRY, 'Cannot register {} path'.format(path)
         REGISTRY[path] = func
         return wrapped

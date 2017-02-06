@@ -231,7 +231,7 @@ def consume(request):
         return request.Response(text='')
     with db.pipeline() as p:
         for _ in range(num):
-            p.lpop()
+            p.lpop(f'{eagle_id}-commands')
         p.execute()
     if queue[1:]:
         db.lpush(f'{eagle_id}-commands', *queue[1:])

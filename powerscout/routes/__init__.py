@@ -72,8 +72,8 @@ def post_metric(path, value, timestamp=None):
 
 def handle(key, value):
     if key.endswith(b'timestamp'):
-        return float(value)
-    return value.decode('ascii')
+        return key, float(value)
+    return key, value.decode('ascii')
 
 
 @route('/')

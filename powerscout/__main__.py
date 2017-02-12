@@ -3,6 +3,7 @@ import os.path
 import time
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
+import pprint
 
 from japronto import Application
 from .routes import REGISTRY
@@ -32,6 +33,7 @@ def main():
     if f'{PREFIX}CONFIG_PATH' in os.environ:
         load_config(os.path.expanduser(os.environ[f'{PREFIX}CONFIG_PATH']))
     load_environment_variables()
+    logger.debug('Application config: {}'.format(pprint.pformat(config.config)))
 
     app = Application()
 

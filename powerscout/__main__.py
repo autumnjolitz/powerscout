@@ -7,6 +7,7 @@ import pprint
 
 from japronto import Application
 from .routes import REGISTRY
+from . import config
 from .config import load_config, load_environment_variables, PREFIX
 from .services.apc import update_apc_status
 

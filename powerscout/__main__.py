@@ -9,7 +9,10 @@ from .routes import REGISTRY
 from .config import load_config, load_environment_variables, PREFIX
 from .services.apc import update_apc_status
 
+logger = logging.getLogger('powerscout')
+
 logging.basicConfig(level=logging.DEBUG)
+
 
 APC_WORKER = multiprocessing.Event()
 

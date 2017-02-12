@@ -14,8 +14,10 @@ logging.basicConfig(level=logging.DEBUG)
 APC_WORKER = multiprocessing.Event()
 
 def apc_worker():
+    logger.info('Started APC worker')
     APC_WORKER.set()
     while APC_WORKER.is_set():
+        logger.debug('Updating status')
         try:
             update_apc_status()
         except Exception as e:

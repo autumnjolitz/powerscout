@@ -1,11 +1,26 @@
 import logging
 import os.path
+import time
+import multiprocessing
+from concurrent.futures import ProcessPoolExecutor
 
 from japronto import Application
 from .routes import REGISTRY
 from .config import load_config, load_environment_variables, PREFIX
+from .services.apc import update_apc_status
 
 logging.basicConfig(level=logging.DEBUG)
+
+APC_WORKER = multiprocessing.Event()
+
+def apc_worker():
+    APC_WORKER.set()
+    while APC_WORKER.is_set():
+        try:
+            update_apc_status()
+        except Exception as e:
+            logger.exception('Unable to update the APC status!')
+        time.sleep(2)
 
 
 def main():
@@ -17,8 +32,13 @@ def main():
 
     for path, func in REGISTRY.items():
         app.router.add_route(path, func)
-
-    app.run()
+    with ProcessPoolExecutor(1) as exe:
+        future = exe.submit(apc_worker)
+        try:
+            app.run()
+        except KeyboardInterrupt:
+            APC_WORKER.clear()
+            future.cancel()
 
 if __name__ == '__main__':
     import argparse

@@ -48,9 +48,13 @@ def route(path):
             finally:
                 if duration is None:
                     duration = time.time() - t_s
-                    post_metric(f'{module_name}.{func.__name__}.durations.errored', duration)
+                    post_metric(
+                        f'{module_name}.{func.__name__}.durations.errored.seconds',
+                        duration)
                 else:
-                    post_metric(f'{module_name}.{func.__name__}.durations.okay', duration)
+                    post_metric(
+                        f'{module_name}.{func.__name__}.durations.okay.seconds',
+                        duration)
                 logger.debug(f'{module_name}.{func.__name__} took {duration:.2f}')
 
         assert path not in REGISTRY, 'Cannot register {} path'.format(path)

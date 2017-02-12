@@ -12,7 +12,8 @@ install_requirements = [
     'redis',
     'beautifulsoup4',
     'PyYAML',
-    'lxml'
+    'lxml',
+    'requests'
 ]
 
 # The following are meant to avoid accidental upload/registration of this

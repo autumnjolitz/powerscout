@@ -35,6 +35,7 @@ def main():
         load_config(os.path.expanduser(os.environ[f'{PREFIX}CONFIG_PATH']))
     load_environment_variables()
     logger.debug('Application config: {}'.format(pprint.pformat(config.config)))
+    logger.debug('Environ: {}'.format(pprint.pformat(os.environ)))
 
     app = Application()
 

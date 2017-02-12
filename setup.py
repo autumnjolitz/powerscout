@@ -9,7 +9,10 @@ here = path.abspath(path.dirname(__file__))
 install_requirements = [
     'japronto',
     'jinja2',
-    'redis'
+    'redis',
+    'beautifulsoup4',
+    'PyYAML',
+    'lxml'
 ]
 
 # The following are meant to avoid accidental upload/registration of this

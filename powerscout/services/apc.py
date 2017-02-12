@@ -124,7 +124,7 @@ def update_apc_status():
     post_metric('apc.capacity_left.percentage', capacity)
     for key, value in outlet_loads.items():
         key = key.lower().replace(' ', '_')
-        post_metric(f'apc.outlets.{key}.watts', value)
+        post_metric(f'apc.outlets.{key}.watts', value['value'])
 
     ups_status = {
         'vac': vac,

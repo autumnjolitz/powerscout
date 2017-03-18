@@ -79,8 +79,6 @@ def consume(request):
         root = xml.etree.ElementTree.parse(body).getroot()
         eagle_id = root.attrib['macId']
         eagle_timestamp_utc = int(root.attrib['timestamp'][:-1], 10)
-        # Convert into local time.time()
-        eagle_timestamp = datetime.datetime.utcfromtimestamp(eagle_timestamp_utc).timestamp()
         body = {
             element.tag: {
                 leaf.tag: leaf.text for leaf in element
@@ -121,9 +119,9 @@ def consume(request):
         post_metric(f'meters.{name}.instant_demand.kilowatts', instant_demand, timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.eagle.device',
-                    eagle_timestamp - timestamp_utc)
+                    eagle_timestamp_utc - timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.eagle',
-                    utc_now - eagle_timestamp)
+                    utc_now - eagle_timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.device',
                     utc_now - timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.ping', 1)
@@ -152,9 +150,9 @@ def consume(request):
         post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered, timestamp_utc)
         post_metric(f'meters.{name}.current_sum.received', utility_kwh_sent, timestamp_utc)
         post_metric(f'meters.{name}.current_sum.tx_info.delay.eagle.device',
-                    eagle_timestamp - timestamp_utc)
+                    eagle_timestamp_utc - timestamp_utc)
         post_metric(f'meters.{name}.current_sum.tx_info.delay.server.eagle',
-                    utc_now - eagle_timestamp)
+                    utc_now - eagle_timestamp_utc)
         post_metric(f'meters.{name}.current_sum.tx_info.delay.server.device',
                     utc_now - timestamp_utc)
         post_metric(f'meters.{name}.current_sum.tx_info.ping', 1)

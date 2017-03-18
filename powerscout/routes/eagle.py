@@ -84,7 +84,7 @@ def consume(request):
         # Therefore: When PST[-8] -> PST[-7], the `eagle_timestamp` became 1 hour behind
         # TODO: write into redis the timestamp item:
         eagle_timestamp = int(root.attrib['timestamp'][:-1], 10)
-        db.set('eagle_utc_timestamp', root.attrib['timestamp'])
+        db.set('eagle_utc_timestamp', root.attrib['timestamp'][:-1])
 
         eagle_timestamp_utc = datetime.datetime.fromtimestamp(eagle_timestamp).timestamp()
         body = {

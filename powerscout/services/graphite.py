@@ -25,6 +25,8 @@ def post_metric(path, value, timestamp=None):
         conn = socket.create_connection(
             (config.config['GRAPHITE_HOSTNAME'], config.config['GRAPHITE_PORT']))
 
+    # time.time() -> UTC Epoch by definition, so it works with
+    # Graphite as-is
     queue.append((path, (timestamp or time.time(), value,)))
 
     if queue and (

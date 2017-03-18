@@ -44,6 +44,7 @@ def index(request):
         mime_type='text/html',
         text=render_template('index.html', meters=meters))
 
+
 @route('/fastpoll/{mac_id}')
 @route('/fastpoll/{mac_id}/{seconds}')
 def fastpoll(request, mac_id, seconds=4):
@@ -69,7 +70,6 @@ def fastpoll(request, mac_id, seconds=4):
             'message': 'Ok'
         })
 
-LOCAL_TIMEZONE = datetime.datetime.now(datetime.timezone.utc).astimezone().tzinfo
 
 @route('/ingest')
 def consume(request):
@@ -90,16 +90,23 @@ def consume(request):
         logger.exception('Fault in decoding {!s}'.format(request.body))
         return request.Response(code=400)
 
-    utc_now = datetime.datetime.utcnow().timestamp()
+    # Left in as a teaching moment:
+    #   The below is wrong:
+    # utc_now = datetime.datetime.utcnow().timestamp()
+    #   The correction is:
+    # utc_now = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).timestamp()
+    #   The solves:
+    # assert abs(time.time() - utc_now) < 1.5
+    utc_now = time.time()
 
     if 'InstantaneousDemand' in body:
         item = body['InstantaneousDemand']
         instant_demand = \
             int(item['Demand'], 16) * \
             (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1)
+
+        # Trust the Eagle to have UTC-everywhere:
         timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
-        local_timestamp = datetime.datetime.fromtimestamp(
-            timestamp_utc).replace(tzinfo=datetime.timezone.utc).astimezone().timestamp()
 
         name = item['MeterMacId']
         key = f'meter-{name}'
@@ -110,22 +117,21 @@ def consume(request):
             p.hset('eagles', name, eagle_id)
             p.execute()
 
-        post_metric(f'meters.{name}.instant_demand.kilowatts', instant_demand, local_timestamp)
-        post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., local_timestamp)
+        # Graphite considers UTC vectored data
+        post_metric(f'meters.{name}.instant_demand.kilowatts', instant_demand, timestamp_utc)
+        post_metric(f'meters.{name}.instant_demand.watts', instant_demand * 1000., timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.eagle.device',
                     eagle_timestamp - timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.eagle',
                     utc_now - eagle_timestamp)
-        post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.device', utc_now - timestamp_utc)
+        post_metric(f'meters.{name}.instant_demand.tx_info.delay.server.device',
+                    utc_now - timestamp_utc)
         post_metric(f'meters.{name}.instant_demand.tx_info.ping', 1)
         del timestamp_utc
 
     if 'CurrentSummationDelivered' in body:
         item = body['CurrentSummationDelivered']
         timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
-        local_timestamp = datetime.datetime.fromtimestamp(
-            timestamp_utc).replace(tzinfo=datetime.timezone.utc).astimezone().timestamp()
-
 
         utility_kwh_delivered = \
             int(item['SummationDelivered'], 16) * \
@@ -143,12 +149,14 @@ def consume(request):
             p.hset('eagles', name, eagle_id)
             p.execute()
 
-        post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered, local_timestamp)
-        post_metric(f'meters.{name}.current_sum.received', utility_kwh_sent, local_timestamp)
+        post_metric(f'meters.{name}.current_sum.delivered', utility_kwh_delivered, timestamp_utc)
+        post_metric(f'meters.{name}.current_sum.received', utility_kwh_sent, timestamp_utc)
         post_metric(f'meters.{name}.current_sum.tx_info.delay.eagle.device',
                     eagle_timestamp - timestamp_utc)
-        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.eagle', utc_now - eagle_timestamp)
-        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.device', utc_now - timestamp_utc)
+        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.eagle',
+                    utc_now - eagle_timestamp)
+        post_metric(f'meters.{name}.current_sum.tx_info.delay.server.device',
+                    utc_now - timestamp_utc)
         post_metric(f'meters.{name}.current_sum.tx_info.ping', 1)
 
     if 'FastPollStatus' in body:

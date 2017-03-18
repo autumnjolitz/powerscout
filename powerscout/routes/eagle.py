@@ -78,9 +78,15 @@ def consume(request):
     try:
         root = xml.etree.ElementTree.parse(body).getroot()
         eagle_id = root.attrib['macId']
-        # Assumption: timestamp really is our LOCAL epoch, not the UTC one.
+        # Assumption: timestamp should be UTC
+        # Assumption: The device converts non-UTC datetimes -> UTC in software
+        # Assumption: The device fails to account for DST in non UTC -> UTC conversion
+        # Therefore: When PST[-8] -> PST[-7], the `eagle_timestamp` became 1 hour behind
+        # TODO: write into redis the timestamp item:
         eagle_timestamp = int(root.attrib['timestamp'][:-1], 10)
-        eagle_timestamp_utc = datetime.datetime.utcfromtimestamp(eagle_timestamp).timestamp()
+        db.set('eagle_utc_timestamp', root.attrib['timestamp'][:-1])
+
+        eagle_timestamp_utc = datetime.datetime.fromtimestamp(eagle_timestamp).timestamp()
         body = {
             element.tag: {
                 leaf.tag: leaf.text for leaf in element
@@ -105,7 +111,8 @@ def consume(request):
             int(item['Demand'], 16) * \
             (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1)
 
-        # Trust the Eagle to have UTC-everywhere:
+        # Assumption: TimeStamp is true-UTC and not the result of a
+        # bad timezone conversion
         timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
 
         name = item['MeterMacId']

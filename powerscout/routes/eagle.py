@@ -78,7 +78,9 @@ def consume(request):
     try:
         root = xml.etree.ElementTree.parse(body).getroot()
         eagle_id = root.attrib['macId']
-        eagle_timestamp_utc = int(root.attrib['timestamp'][:-1], 10)
+        # Assumption: timestamp really is our LOCAL epoch, not the UTC one.
+        eagle_timestamp = int(root.attrib['timestamp'][:-1], 10)
+        eagle_timestamp_utc = datetime.datetime.utcfromtimestamp(eagle_timestamp).timestamp()
         body = {
             element.tag: {
                 leaf.tag: leaf.text for leaf in element

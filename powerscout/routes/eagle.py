@@ -78,11 +78,8 @@ def consume(request):
     try:
         root = xml.etree.ElementTree.parse(body).getroot()
         eagle_id = root.attrib['macId']
-        # Assumption: timestamp should be UTC
-        # Assumption: The device converts non-UTC datetimes -> UTC in software
-        # Assumption: The device fails to account for DST in non UTC -> UTC conversion
-        # Therefore: When PST[-8] -> PST[-7], the `eagle_timestamp` became 1 hour behind
-        # TODO: write into redis the timestamp item:
+        # Requirement:
+        #   - Set the Eagle in UTC timezone
         eagle_timestamp = int(root.attrib['timestamp'][:-1], 10)
         db.set('eagle_utc_timestamp', root.attrib['timestamp'][:-1])
 
@@ -113,6 +110,8 @@ def consume(request):
 
         # Assumption: TimeStamp is true-UTC and not the result of a
         # bad timezone conversion
+        # So far: I've found the "utc" time is really my local time without DST.
+        #   i.e. (time.time() - timestamp_utc) + 8*60*60 < 10 seconds
         timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
 
         name = item['MeterMacId']
@@ -120,6 +119,7 @@ def consume(request):
         with db.pipeline() as p:
             p.hset(key, 'instand_demand', instant_demand)
             p.hset(key, 'instant_demand_timestamp', timestamp_utc)
+            p.hset(key, 'instant_demand_raw_timestamp', item['TimeStamp'])
             p.sadd('meters', key)
             p.hset('eagles', name, eagle_id)
             p.execute()

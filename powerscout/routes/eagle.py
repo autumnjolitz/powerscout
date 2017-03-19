@@ -14,12 +14,11 @@ from . import route
 from ..services.graphite import post_metric
 
 YEAR_2000_OFFSET = \
-    (datetime.datetime(2000, 1, 1) - datetime.datetime.fromtimestamp(0)).total_seconds()
+    (datetime.datetime(2000, 1, 1) - datetime.datetime.utcfromtimestamp(0)).total_seconds()
 
 db = redis.from_url(config['REDIS_URI'])
 
 logger = logging.getLogger(__name__)
-
 
 
 def handle(key, value):
@@ -108,10 +107,6 @@ def consume(request):
             int(item['Demand'], 16) * \
             (int(item['Multiplier'], 16) or 1) / (int(item['Divisor'], 16) or 1)
 
-        # Assumption: TimeStamp is true-UTC and not the result of a
-        # bad timezone conversion
-        # So far: I've found the "utc" time is really my local time without DST.
-        #   i.e. (time.time() - timestamp_utc) + 8*60*60 < 10 seconds
         timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
 
         name = item['MeterMacId']

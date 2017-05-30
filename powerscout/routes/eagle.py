@@ -23,6 +23,8 @@ logger = logging.getLogger(__name__)
 
 def handle(key, value):
     if key.endswith(b'timestamp'):
+        if isinstance(value, bytes):
+            value = value.decode('ascii')
         return key, float(value)
     return key, value.decode('ascii')
 

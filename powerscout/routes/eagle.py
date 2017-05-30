@@ -25,6 +25,8 @@ def handle(key, value):
     if key.endswith(b'timestamp'):
         if isinstance(value, bytes):
             value = value.decode('ascii')
+        if isinstance(value, str) and value.startswith('0x'):
+            value = int(value, 16)
         return key, float(value)
     return key, value.decode('ascii')
 

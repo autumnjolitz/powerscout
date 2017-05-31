@@ -74,7 +74,19 @@ def fastpoll(request, mac_id, seconds=4):
         })
 
 
+def handle_exc(func):
+    @functools.wraps(func)
+    def wrapped(request):
+        try:
+            return func(request)
+        except Exception:
+            logger.exception('Unhandled exception!')
+            return request.Response(code=500)
+    return wrapped
+
+
 @route('/ingest')
+@handle_exc
 def consume(request):
     body = io.BytesIO(request.body)
     body.seek(0)

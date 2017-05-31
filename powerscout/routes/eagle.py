@@ -149,6 +149,7 @@ def consume(request):
 
     if 'CurrentSummationDelivered' in body:
         item = body['CurrentSummationDelivered']
+        logger.info('Current debug: {}'.format(item))
         timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
 
         utility_kwh_delivered = \

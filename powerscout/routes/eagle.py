@@ -152,6 +152,23 @@ def consume(request):
         post_metric(f'meters.{name}.instant_demand.tx_info.ping', 1)
         del timestamp_utc
 
+    if 'PriceCluster' in body:
+        item = body['PriceCluster']
+        name = item['MeterMacId']
+        timestamp_utc = int(item['TimeStamp'], 16) + YEAR_2000_OFFSET
+        current_tier = item['RateLabel']
+        price = int(item['Price'], 16) / int('1' + ('0'*int(item['TrailingDigits'], 16)))
+
+        key = f'meter-{name}'
+        with db.pipeline() as p:
+            p.hset(key, 'current_price', price)
+            p.hset(key, 'current_tier', current_tier)
+            p.sadd('meters', key)
+            p.hset('eagles', name, eagle_id)
+            p.execute()
+        post_metric(f'meters.{name}.price_cluster.price', price, timestamp_utc)
+        post_metric(f'meters.{name}.price_cluster.tier', current_tier, timestamp_utc)
+
     if 'CurrentSummationDelivered' in body:
         item = body['CurrentSummationDelivered']
         logger.info('Current debug: {}'.format(item))

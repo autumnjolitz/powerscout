@@ -7,6 +7,7 @@ import struct
 import datetime
 import pickle
 import redis
+import json
 import socket
 from ..templates import render_template
 from ..config import config
@@ -116,6 +117,10 @@ def consume(request):
     #   The solves:
     # assert abs(time.time() - utc_now) < 1.5
     utc_now = time.time()
+
+    with db.pipeline() as p:
+        p.rpush('recent_eagle_pushes', json.dumps(body))
+        p.ltrim('recent_eagle_pushes', -100, -1)
 
     if 'InstantaneousDemand' in body:
         item = body['InstantaneousDemand']

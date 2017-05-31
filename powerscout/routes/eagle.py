@@ -117,10 +117,10 @@ def consume(request):
     #   The solves:
     # assert abs(time.time() - utc_now) < 1.5
     utc_now = time.time()
-
     with db.pipeline() as p:
         p.rpush('recent_eagle_pushes', json.dumps(body))
         p.ltrim('recent_eagle_pushes', -100, -1)
+        p.execute()
 
     if 'InstantaneousDemand' in body:
         item = body['InstantaneousDemand']

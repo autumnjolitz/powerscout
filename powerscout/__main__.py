@@ -31,6 +31,8 @@ def apc_worker():
 SYSLOG_KWARGS = {'facility': logging.handlers.SysLogHandler.LOG_LOCAL0}
 SYSLOG_FORMAT = logging.Formatter(
     '%(name)s: [%(asctime)s] [PID %(process)d] [%(levelname)s] %(message)s')
+CONSOLE_FORMAT = logging.Formatter(
+    '[%(name)s] [%(asctime)s] [PID %(process)d] [%(levelname)s] %(message)s')
 
 if os.path.exists('/dev/log'):
     SYSLOG_KWARGS['address'] = '/dev/log'
@@ -42,6 +44,7 @@ def main(port=8080, host='0.0.0.0', *, debug=False):
     logger.setLevel(logging.INFO)
     if debug:
         handler = logging.StreamHandler()
+        handler.setFormatter(CONSOLE_FORMAT)
         handler.setLevel(logging.DEBUG)
         logger.addHandler(handler)
         logger.setLevel(logging.DEBUG)

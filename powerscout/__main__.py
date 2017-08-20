@@ -98,6 +98,7 @@ if __name__ == '__main__':
             help='defaults to {!r}'.format(config.config[key]))
 
     args = parser.parse_args()
+    print(args, dir(args))
     if args.mode == 'file':
         config_path = os.path.expanduser(args.config_path)
         if not os.path.exists(config_path):

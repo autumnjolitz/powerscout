@@ -43,7 +43,10 @@ def load_config(path):
         else:
             extension = os.path.basename(path).rsplit('.', 1)[-1]
             raise ValueError(f'Unrecognized extension ".{extension}". Use `.json` or `.yml`')
+    return config
 
+
+def ensure_config_schema():
     for key in config.keys() & config_schema.keys():
         value = config[key]
         type = config_schema[key]
@@ -53,7 +56,6 @@ def load_config(path):
         if not isinstance(value, type):
             value = type(value)
         config[key] = validation_func(value)
-    return config
 
 
 def load_environment_variables():

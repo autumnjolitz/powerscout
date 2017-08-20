@@ -98,7 +98,7 @@ if __name__ == '__main__':
             help='defaults to {!r}'.format(config.config[key]))
 
     args = parser.parse_args()
-    if getattr(args, 'mode', None):
+    if not getattr(args, 'mode', None):
         raise ValueError('No command specified')
     if args.mode == 'file':
         config_path = os.path.expanduser(args.config_path)

@@ -105,9 +105,8 @@ if __name__ == '__main__':
         load_config(config_path)
         del args.config_path
     elif args.mode == 'env':
-        if f'{PREFIX}CONFIG_PATH' not in os.environ:
-            raise KeyError(f'{PREFIX}CONFIG_PATH is not set!')
-        load_config(os.path.expanduser(os.environ[f'{PREFIX}CONFIG_PATH']))
+        if f'{PREFIX}CONFIG_PATH' in os.environ:
+            load_config(os.path.expanduser(os.environ[f'{PREFIX}CONFIG_PATH']))
         load_environment_variables()
     elif args.mode == 'cli':
         for arg_key, config_key in cli_from.items():

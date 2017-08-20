@@ -5,8 +5,8 @@ import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
 import pprint
 
-from japronto import Application
-from .routes import REGISTRY
+from . import make_app
+from .routes import apc_routes, eagle_routes
 from . import config
 from .config import load_config, load_environment_variables, PREFIX
 from .services.apc import update_apc_status
@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 APC_WORKER = multiprocessing.Event()
+
 
 def apc_worker():
     logger.info('Started APC worker')
@@ -30,21 +31,21 @@ def apc_worker():
         time.sleep(2)
 
 
-def main():
+def main(port=8080, host='0.0.0.0'):
     if f'{PREFIX}CONFIG_PATH' in os.environ:
         load_config(os.path.expanduser(os.environ[f'{PREFIX}CONFIG_PATH']))
     load_environment_variables()
     logger.debug('Application config: {}'.format(pprint.pformat(config.config)))
     logger.debug('Environ: {}'.format(pprint.pformat(os.environ)))
 
-    app = Application()
+    app = make_app()
+    app.register_blueprint(apc_routes)
+    app.register_blueprint(eagle_routes)
 
-    for path, func in REGISTRY.items():
-        app.router.add_route(path, func)
     with ProcessPoolExecutor(1) as exe:
         future = exe.submit(apc_worker)
         try:
-            app.run()
+            app.run(port=port, host=host)
         except KeyboardInterrupt:
             APC_WORKER.clear()
             future.cancel()

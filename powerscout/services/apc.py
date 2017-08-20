@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 db = redis.from_url(config.config['REDIS_URI'])
 
+
 def check_status(session, status_url=None):
     if status_url:
         logger.debug(f'Attempting prior URI: {status_url}')
@@ -46,6 +47,7 @@ def check_status(session, status_url=None):
     status_page = session.post(post_endpoint, data=data)
     status_page_url = urlparse(status_page.url)
     return status_page, status_page_url
+
 
 def update_apc_status():
     prior_session = db.get('apc_session')

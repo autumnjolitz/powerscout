@@ -18,6 +18,7 @@ config = {
     'LOWEST_GRID_VAC_ALLOWED': 110  # US
 }
 
+
 def ensure_protocol(item):
     if not item.startswith('http'):
         item = f'http://{item}'
@@ -27,10 +28,11 @@ def ensure_protocol(item):
 
 config_schema = {
     'GRAPHITE_PORT': int,
-    'APC_ENDPOINT': (str, ensure_protocol), 
+    'APC_ENDPOINT': (str, ensure_protocol),
 }
 
 IDENTITY = lambda x: x
+
 
 def load_config(path):
     with open(path, 'rb') as fh:
@@ -55,7 +57,8 @@ def load_config(path):
 
 
 def load_environment_variables():
-    environ_keys = frozenset(key[PREFIX_LEN:] for key in os.environ.keys() if key.startswith(PREFIX))
+    environ_keys = frozenset(
+        key[PREFIX_LEN:] for key in os.environ.keys() if key.startswith(PREFIX))
     for key in environ_keys & config.keys():
         value = os.environ[f'{PREFIX}{key}']
         if key in config_schema and not isinstance(value, config_schema[key]):

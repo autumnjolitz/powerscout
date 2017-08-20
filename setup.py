@@ -5,10 +5,14 @@ from os import path
 # Always prefer setuptools over distutils
 from setuptools import (setup, find_packages)
 
+if sys.version_info[0] == 2:
+    sys.stderr.write("This package only supports Python 3+.\n")
+    sys.exit(1)
+
 here = path.abspath(path.dirname(__file__))
 install_requirements = [
-    'japronto',
-    'jinja2',
+    'sanic~=0.6.0',
+    'sanic-jinja2~=0.5.2',
     'redis',
     'beautifulsoup4',
     'PyYAML',

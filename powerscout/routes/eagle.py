@@ -87,7 +87,7 @@ FAST_POLL_FRAG = '''<RavenCommand>
 </RavenCommand>'''
 
 
-@eagle.route('/ingest')
+@eagle.route('/ingest', methods=('POST',))
 @handle_exc
 def consume(request):
     body = io.BytesIO(request.body)

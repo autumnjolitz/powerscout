@@ -43,7 +43,7 @@ if __version__ is None:
     raise IOError('about.py in project lacks __version__!')
 
 setup(name='powerscout', version=__version__,
-      author='Ben Jolitz',
+      author='Autumn Jolitz',
       description='Server for Rainforest EAGLE -> Graphite',
       long_description=long_description,
       license='BSD',

@@ -1,0 +1,9 @@
+version: "3.9"
+
+services:
+  api:
+    ports:
+      - target: 8080
+        published: "${POWERSCOUT_FORWARDED_PORT:-8080}"
+        protocol: tcp
+        mode: host

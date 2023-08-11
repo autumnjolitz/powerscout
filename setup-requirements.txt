@@ -1,0 +1,8 @@
+sanic
+sanic-jinja2
+aioredis
+beautifulsoup4
+PyYAML
+lxml
+aiohttp
+asyncpg

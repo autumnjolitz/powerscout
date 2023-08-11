@@ -1,0 +1,5 @@
+GRAPHITE_HOSTNAME: nyx.lan
+APC_ENDPOINT: apcda36f5.lan
+APC_USERNAME: apc
+APC_PASSWORD: apc
+POSTGRES_URI: postgres://localhost:5432/powerscout

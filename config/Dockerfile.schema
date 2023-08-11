@@ -1,0 +1,58 @@
+# syntax=docker/dockerfile:1
+
+FROM timescale/timescaledb:latest-pg14 AS builder
+WORKDIR /powerscout
+ADD db-requirements.lock /powerscout/db-requirements.lock
+RUN apk add --no-cache python3 gcc python3-dev musl-dev patchelf linux-headers zip && \
+    cd /usr/lib/python3.11 && \
+    (find . -name "__pycache__" -print0 | xargs -0 rm -rf ) && \
+    (find . -name "*.py" -print0 | xargs -0 python3 -m compileall -f -b -d /powerscout/python/lib) && \
+    (find . -name "__pycache__" -print0 | xargs -0 -r rm -rf ) && \
+    zip /tmp/python311.zip $(find . -type f -name "*.pyc" -print) && \
+    cd /powerscout && \
+    python3 -m ensurepip && \
+    python3 -m pip install -U pip && \
+    python3 -m pip install wheel && mkdir /wheels && \
+    python3 -m pip wheel -w /wheels -r db-requirements.lock && \
+    python3 -m venv --copies --without-pip python && \
+    # copy the runtime python library into the venv
+    cp /usr/lib/libpython3* python/lib/. && \
+    cp /tmp/python311.zip python/lib/. && \
+    cp -R $(echo /usr/lib/python3.*/lib-dynload) $(echo python/lib/python3.*)/lib-dynload && \
+    # Iterate through shared library dependencies, both successful ones that we can search for
+    # having ``/usr/lib`` and scraping the "Error: relocation ... failed" to find the remainder
+    (cd /usr/lib && \
+        for filename in $(\
+            for filename in $(echo python3.11/lib-dynload/*);\
+            do ldd $filename 2>&1 | grep -vE reloca; \
+            done | grep loading | cut -f5 -d' ' | cut -f1 -d':');\
+        do cp $filename /powerscout/python/lib/.;\
+        done) && \
+    # Gather error'ed "I can't find this shared object by name" pieces:
+    (cd /usr/lib && \
+        for filename in $(\
+            for filename in $(echo python3.11/lib-dynload/*); \
+            do ldd $filename 2>&1 | grep -vE reloca; \
+            done | grep '/usr/lib' | cut -f1 -d' '); \
+        do cp $filename /powerscout/python/lib/.; \
+        done) && \
+    # migra depends quietly on setuptools, so install it directly
+    python3 -m pip --python python/bin/python install \
+        setuptools && \
+    # install the dependencies
+    python3 -m pip --python python/bin/python install \
+        --find-links=/wheels -r db-requirements.lock && \
+    # patch the python executable to look at itself
+    for filename in $(echo /powerscout/python/bin/python*);\
+    do \
+        patchelf --set-rpath /powerscout/python/lib $filename; \
+    done && \
+    rm -rf /wheels
+RUN sed -i'' 's|/usr/bin|/powerscout/python/bin|g' /powerscout/python/pyvenv.cfg
+FROM timescale/timescaledb:latest-pg14
+ADD config/30add_path.sh /etc/profile.d/
+ENV PATH="${PATH}:/powerscout/python/bin"
+COPY --from=builder /powerscout /powerscout
+WORKDIR /powerscout
+ADD config/003_initialize_powerscout_schema.sh /docker-entrypoint-initdb.d/
+COPY sql/ /powerscout/sql

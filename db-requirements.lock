@@ -1,0 +1,17 @@
+greenlet==2.0.2
+iniconfig==2.0.0
+migra==3.0.1663481299
+mirakuru==2.5.1
+packaging==23.1
+pluggy==1.2.0
+port-for==0.7.1
+psutil==5.9.5
+psycopg==3.1.10
+psycopg2-binary==2.9.7
+pytest==7.4.0
+pytest-postgresql==5.0.0
+schemainspect==3.1.1663587362
+six==1.16.0
+SQLAlchemy==2.0.19
+sqlbag==0.1.1617247075
+typing_extensions==4.7.1

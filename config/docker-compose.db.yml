@@ -1,0 +1,32 @@
+version: "3.9"
+# Boot a cluster that has a fresh timescaledb
+
+services:
+  api:
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      - database
+    environment:
+      POWERSCOUT_POSTGRES_URI=${POWERSCOUT_POSTGRES_URI:-postgres://database/powerscout}
+
+  database:
+    image: autumnjolitz/powerscout-db
+    networks:
+      - backend
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      -
+        type: 'volume'
+        source: 'database'
+        target: '/var/lib/postgresql/data'
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+        mode: host
+
+networks:
+  backend:

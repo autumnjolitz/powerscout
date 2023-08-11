@@ -1,0 +1,9 @@
+aiohttp==3.8.4
+aioredis==2.0.1
+asyncpg==0.27.0
+beautifulsoup4==4.12.2
+lxml==4.9.2
+PyYAML==6.0
+sanic==23.3.0
+sanic-jinja2==2022.11.11
+sanic-routing==22.8.0

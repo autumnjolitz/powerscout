@@ -12,3 +12,13 @@ Capabilities
 - Aggressively query/scrape an `APC BackUPS Pro 500 <http://www.apc.com/shop/us/en/products/APC-Back-UPS-Pro-500-Lithium-Ion-UPS/P-BG500>`_.
 - Ingest metrics from the above into Graphite
 - Write snapshot data into Redis
+
+Development
+--------------
+
+.. code-block:: console
+
+    $ python3.10 -m pip install --user invoke
+    $ invoke setup
+    $ . python/bin/activate
+    (python) $ ...
